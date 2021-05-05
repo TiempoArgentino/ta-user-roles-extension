@@ -78,20 +78,21 @@ class TA_Roles_Plugin{
             'edit_theme_options'                        => true,
         ),
         'articles_edit'             => array(
-            'edit_articles'                              => true,
-            'delete_articles'                            => true,
+            'edit_articles'                             => true,
+            'delete_articles'                           => true,
             'create_articles'                           => true,
             'edit_others_articles'                      => true,
             'delete_others_articles'                    => true,
-            'edit_published_articles'                   => true,
             'read_private_articles'                     => true,
             'edit_private_articles'                     => true,
             'delete_private_articles'                   => true,
             'publish_articles'                          => false,
+            'edit_published_articles'                   => false,
             'delete_published_articles'                 => false,
         ),
         'articles_publish'          => array(
             'publish_articles'                          => true,
+            'edit_published_articles'                   => true,
             'delete_published_articles'                 => true,
         ),
         'media_uploads'             => array(
@@ -293,8 +294,12 @@ class TA_Roles_Plugin{
 
                 $role_args = include TA_Roles_Plugin::$roles_folder . $role_file;
                 if( $role_args && is_array($role_args) && isset($role_args[0]) && isset($role_args[1]) && isset($role_args[2]) ){
-                    // remove_role( $role_args[0] );
-                    $wp_roles->add_role( $role_args[0] , $role_args[1] , $role_args[2]);
+                    // If the role is already set, it will not add_role (wp-includes/class-wp-roles.php line 157)ç
+                    // we don't do database updates, so its not a big change
+                    if(isset($wp_roles->roles[$role_args[0]]))
+                        stablish_capabilities($role_args[0], $role_args[2] );
+                    else
+                        $wp_roles->add_role( $role_args[0] , $role_args[1] , $role_args[2]);
                     // add_role( $role_args[0] , $role_args[1] , $role_args[2] );
                 }
     		}
