@@ -17,7 +17,7 @@ define('TA_ROLES_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 class TA_Roles_Plugin{
     static private $initialized = false;
     static private $version = "1.0.0";
-    static private $roles_folder = TA_ROLES_PLUGIN_PATH . 'inc/roles/';
+    static private $roles_folder = TA_ROLES_PLUGIN_PATH . 'inc/roles';
     static private $capabilities = array(
         'portada'                   => array(
             'edit_pages'                                => true,
@@ -97,6 +97,16 @@ class TA_Roles_Plugin{
         ),
         'media_uploads'             => array(
             'upload_files'                              => true,
+             'delete_others_posts'  => true,
+             'delete_posts' => true,
+             'delete_private_posts' => true,
+             'delete_published_posts'   => true,
+             'edit_others_posts'    => true,
+             'edit_posts'   => true,
+             'edit_private_posts'   => true,
+             'edit_published_posts' => true,
+             'publish_posts'    => true,
+             'read_private_posts'   => true,
         ),
         'ads'                       => array(
         ),
@@ -258,10 +268,11 @@ class TA_Roles_Plugin{
         self::$initialized = true;
         require_once TA_ROLES_PLUGIN_PATH . 'inc/functions.php';
         self::set_core_roles_capabilities();
-        self::set_roles();
-        // add_action('wp_roles_init', array(self::class, 'set_roles'), 1);
+        // self::set_roles();
+        // add_action('wp_roles_init', array(self::class, 'set_roles'), 1, 1);
         add_action('pre_comment_approved', array(self::class, 'role_approved_comment_pre_comment_approved'));
-        // register_activation_hook( __FILE__, array( self::class, 'set_roles' ) );
+        register_activation_hook( __FILE__, array( self::class, 'add_roles' ) );
+        register_deactivation_hook( __FILE__, array( self::class, 'remove_roles' ) );
     }
 
     static public function remove_delete_cap(){
@@ -283,30 +294,36 @@ class TA_Roles_Plugin{
         // add_filter ('user_has_cap', 'prevent_default_theme_deletion', 10, 3);
     }
 
-    static public function set_roles(){
-        // We don't check for option value since roles and capabilities are only stablished during run time (no database involved)
+    static private function do_custom_roles($set = true){
         // if ( get_option( 'ta_roles_version' ) !== self::$version ) {
-            $wp_roles = wp_roles();
-            $wp_roles->use_db = false; // Do not edit database
-            foreach (new DirectoryIterator(TA_Roles_Plugin::$roles_folder) as $role_file) {
-    		    if ($role_file->isDot())
-    				continue;
+        $wp_roles = wp_roles();
+        foreach (new DirectoryIterator(TA_Roles_Plugin::$roles_folder) as $role_file) {
+            if ($role_file->isDot())
+                continue;
 
-                $role_args = include TA_Roles_Plugin::$roles_folder . $role_file;
-                if( $role_args && is_array($role_args) && isset($role_args[0]) && isset($role_args[1]) && isset($role_args[2]) ){
-                    // If the role is already set, it will not add_role (wp-includes/class-wp-roles.php line 157)ç
-                    // we don't do database updates, so its not a big change
+            $role_args = include_once TA_Roles_Plugin::$roles_folder . "/$role_file";
+            if( $role_args && is_array($role_args) && isset($role_args[0]) && isset($role_args[1]) && isset($role_args[2]) ){
+                // If the role is already set, it will not add_role (wp-includes/class-wp-roles.php line 157)
+                if($set){
                     if(isset($wp_roles->roles[$role_args[0]]))
                         stablish_capabilities($role_args[0], $role_args[2] );
-                    else
+                    else{
                         $wp_roles->add_role( $role_args[0] , $role_args[1] , $role_args[2]);
-                    // add_role( $role_args[0] , $role_args[1] , $role_args[2] );
+                    }
                 }
-    		}
-            $wp_roles->use_db = true;
+                else{
+                    remove_role($role_args[0]);
+                }
+            }
+        }
+    }
 
-            // update_option( 'ta_roles_version', self::$version );
-        // }
+    static public function add_roles(){
+        self::do_custom_roles(true);
+    }
+
+    static public function remove_roles(){
+        self::do_custom_roles(false);
     }
 
     /**
@@ -384,9 +401,38 @@ TA_Roles_Plugin::initialize();
 
 
 
+// $wp_roles = wp_roles();
+// var_dump(array_keys($wp_roles->role_objects));
+
+
+// function author_cap_filter( $allcaps, $cap, $args ) {
+//     // Bail out if we're not asking about a post:
+//     if ( 'edit_post' != $args[0] )
+//         return $allcaps;
+//
+//     // Load the post data:
+//     $post = get_post( $args[2] );
+//
+//     if( $post->post_type != 'ta_article' )
+//         return $allcaps;
+//
+//     // Bail out if the post isn't pending or published:
+//     if ( $post->post_status != 'publish' )
+//         return $allcaps;
+//
+//     // Bail out for users who can already edit others posts:
+//     if ( $allcaps['edit_published_articles'] )
+//         return $allcaps;
+//
+//     $allcaps[$cap[0]] = false;
+//
+//     return $allcaps;
+//
+// }
+// add_filter( 'user_has_cap', 'author_cap_filter', 10, 3 );
+//
 // add_action('init', function(){
-//     $user = wp_get_current_user();
-//     var_dump( get_role($user->roles[0])->capabilities );
+//     $wp_roles = wp_roles();
+//     var_dump($wp_roles->get_role('ta_redactor')->capabilities['edit_published_articles']);
+//     er();
 // });
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_TIMEOUT, 400);
