@@ -189,6 +189,9 @@ class TA_Roles_Plugin{
             'moderate_comments'                         => true,    // needs edit_posts
             'edit_comment'                              => true,
         ),
+        'comments_pre_aproved'       => array(
+            'role_approved_comment'                     => true,
+        ),
         'odoo'                      => array(
         ),
         'plugins'                   => array(
@@ -371,6 +374,10 @@ class TA_Roles_Plugin{
     static public function set_core_roles_capabilities(){
         stablish_capabilities('administrator', TA_Roles_Plugin::get_capabilities() );
 
+        stablish_capabilities('subscriber', TA_Roles_Plugin::get_capabilities(array(
+            'comments_pre_aproved',
+        )) );
+
         stablish_capabilities('editor', TA_Roles_Plugin::get_capabilities(array(
             'portada',
             'micrositio_home',
@@ -392,6 +399,7 @@ class TA_Roles_Plugin{
             'mailtrain',
             'comments',
             'extra',
+            'comments_pre_aproved',
         )) );
     }
 

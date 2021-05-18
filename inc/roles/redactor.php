@@ -7,4 +7,5 @@ return array( 'ta_redactor', 'Redactor', TA_Roles_Plugin::get_capabilities(array
     'media_uploads',
     'fotogaleria',
     'extra',
+    'comment_pre_aproved',
 )));
